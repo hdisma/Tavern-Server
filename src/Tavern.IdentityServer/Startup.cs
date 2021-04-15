@@ -1,3 +1,4 @@
+using IdentityServer4.Services;
 using IdentityServerHost.Quickstart.UI;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -13,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Tavern.IdentityServer.DbContexts;
 using Tavern.IdentityServer.Models;
+using Tavern.IdentityServer.Quickstart.Account;
 
 namespace Tavern.IdentityServer
 {
@@ -39,6 +41,8 @@ namespace Tavern.IdentityServer
                 .AddEntityFrameworkStores<TavernUsersDbContext>()
                 .AddDefaultTokenProviders();
 
+            services.AddScoped<IProfileService, UserIdentityProfileService>();
+
             var builder = services.AddIdentityServer(options =>
             {
                 // see https://identityserver4.readthedocs.io/en/latest/topics/resources.html
@@ -48,11 +52,13 @@ namespace Tavern.IdentityServer
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
                 options.Authentication.CookieLifetime = TimeSpan.FromMinutes(15);
+                //options.UserInteraction.LoginUrl = "";
             })
-                .AddInMemoryIdentityResources(Config.IdentityResources)
-                .AddInMemoryApiScopes(Config.ApiScopes)
-                .AddInMemoryClients(Config.Clients)
-                .AddAspNetIdentity<ApplicationUser>();
+            .AddInMemoryIdentityResources(Config.IdentityResources)
+            .AddInMemoryApiScopes(Config.ApiScopes)
+            .AddInMemoryClients(Config.Clients)
+            .AddAspNetIdentity<ApplicationUser>()
+            .AddProfileService<UserIdentityProfileService>();
 
             // not recommended for production - you need to store your key material somewhere secure
             builder.AddDeveloperSigningCredential();
@@ -69,12 +75,12 @@ namespace Tavern.IdentityServer
             // uncomment if you want to add MVC
             app.UseStaticFiles();
             app.UseRouting();
-            //app.UseCors(config =>
-            //{
-            //    config.AllowAnyOrigin();
-            //    config.AllowAnyMethod();
-            //    config.AllowAnyHeader();
-            //});
+            app.UseCors(config =>
+            {
+                config.AllowAnyOrigin();
+                config.AllowAnyMethod();
+                config.AllowAnyHeader();
+            });
             app.UseIdentityServer();
 
             // uncomment, if you want to add MVC
