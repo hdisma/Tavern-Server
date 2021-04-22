@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -16,8 +17,16 @@ namespace Tavern.Api
         {
             var tavernDbContext = serviceProvider.GetRequiredService<TavernDbContext>();
             var tavernUsersDbContext = serviceProvider.GetRequiredService<TavernUsersDbContext>();
-            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            IUserStore<ApplicationUser> userStore = new UserStore<ApplicationUser>(tavernUsersDbContext);
+            IRoleStore<IdentityRole> roleStore = new RoleStore<IdentityRole>(tavernUsersDbContext);
+
+            UserManager<ApplicationUser> userManager = new UserManager<ApplicationUser>(userStore, null, null, null,
+                                                                                        null, null, null, null, null);
+            RoleManager<IdentityRole> roleManager = new(roleStore, null, null, null, null);
+
+            var users = userManager.Users.ToList();
+            var roles = roleManager.Roles.ToList();
 
             tavernDbContext.Database.EnsureCreated();
             tavernUsersDbContext.Database.EnsureCreated();
@@ -62,47 +71,36 @@ namespace Tavern.Api
 
             if (!tavernUsersDbContext.Roles.Any())
             {
-                var role = new IdentityRole()
+                var adminRole = new IdentityRole()
                 {
                     Name = "Admin"
                 };
 
-                await roleManager.CreateAsync(role);
+                var userRole = new IdentityRole()
+                {
+                    Name = "User"
+                };
+
+                await roleManager.CreateAsync(adminRole);
+                await roleManager.CreateAsync(userRole);
             }
 
             if (!tavernUsersDbContext.RoleClaims.Any())
             {
-                var role = roleManager.Roles.FirstOrDefault(x => x.Name == "Admin");
-                await roleManager.AddClaimAsync(role, new Claim("canAccessCategories", "true"));
+                var adminRole = roleManager.Roles.FirstOrDefault(x => x.Name == "Admin");
+                var userRole = roleManager.Roles.FirstOrDefault(x => x.Name == "User");
+                await roleManager.AddClaimAsync(adminRole, new Claim("canAccessCategories", "true"));
+                await roleManager.AddClaimAsync(userRole, new Claim("canAccessProducts", "true"));
             }
 
             if (!tavernUsersDbContext.UserRoles.Any())
             {
                 var user = tavernUsersDbContext.Users.FirstOrDefault();
+                var addProductPermission = new Claim("canAddProducts", "true");
 
-                await userManager.AddToRoleAsync(user, "Admin");
+                await userManager.AddClaimAsync(user, addProductPermission);
             }
 
-            //var roleUser = new IdentityRole()
-            //{
-            //    Name = "User"
-            //};
-
-            //await roleManager.CreateAsync(roleUser);
-
-            //var existingRole = roleManager.Roles.FirstOrDefault(x => x.Name == "User");
-            //await roleManager.AddClaimAsync(existingRole, new Claim("canAccessCategories", "true"));
-
-
-            //var ExistingUser = tavernUsersDbContext.Users.FirstOrDefault();
-
-            //await userManager.AddToRoleAsync(ExistingUser, "User");
-
-            //var existingUser = tavernUsersDbContext.Users.FirstOrDefault();
-
-            //var claim = new Claim("test", "testvalue");
-
-            //await userManager.AddClaimAsync(existingUser, claim);
         }
     }
 }

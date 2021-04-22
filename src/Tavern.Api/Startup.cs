@@ -1,3 +1,4 @@
+using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -35,15 +36,19 @@ namespace Tavern.Api
             services.AddDbContext<TavernUsersDbContext>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("tavernUsersConnectionString")));
 
-            services.AddIdentity<ApplicationUser, IdentityRole>()
-                    .AddEntityFrameworkStores<TavernUsersDbContext>()
-                    .AddDefaultTokenProviders();
-
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tavern.Api", Version = "v1" });
             });
+
+            services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
+                    .AddIdentityServerAuthentication(options =>
+                    {
+                        options.Authority = "https://localhost:5101";
+                        options.ApiName = "tavern-api";
+                        options.RequireHttpsMetadata = true;
+                    });
 
             services.AddApiVersioning(options => {
                 options.AssumeDefaultVersionWhenUnspecified = true;
@@ -60,16 +65,24 @@ namespace Tavern.Api
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tavern.Api v1"));
-                
+
                 // Initialize database with dummy data
                 SeedDatabase.Initialize(app.ApplicationServices.GetRequiredService<IServiceScopeFactory>()
                               .CreateScope().ServiceProvider);
             }
 
+            app.UseCors(options =>
+            {
+                options.AllowAnyOrigin();
+                options.AllowAnyMethod();
+                options.AllowAnyHeader();
+            });
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

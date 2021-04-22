@@ -16,11 +16,24 @@ namespace Tavern.IdentityServer
                 new IdentityResources.Profile()
         };
 
+        public static IEnumerable<ApiResource> ApiResources =>
+        new ApiResource[]
+        {
+            new ApiResource("tavern-api", "Tavern Api")
+            {
+                Name = "tavern-api",
+                DisplayName = "Tavern Api",
+                Scopes = new List<string> { "tavern-api.read", "tavern-api.write" }
+            }
+        };
+
         public static IEnumerable<ApiScope> ApiScopes =>
         new ApiScope[]
         {
-            new ApiScope("tavern-api", "Tavern Api")
+            new ApiScope("tavern-api.read", "Read Access to API #1"),
+            new ApiScope("tavern-api.write", "Write Access to API #1")
         };
+        
 
         public static IEnumerable<Client> Clients =>
         new Client[]
@@ -35,16 +48,18 @@ namespace Tavern.IdentityServer
                 AllowAccessTokensViaBrowser = true,
                 RequireConsent = false,
 
-                RedirectUris =           { "http://localhost:4200/signin-callback", "http://localhost:4200/assets/silent-callback.html" },
-                PostLogoutRedirectUris = { "http://localhost:4200/signout-callback" },
-                AllowedCorsOrigins =     { "http://localhost:4200" },
+                RedirectUris =           { "https://localhost:4200/signin-callback", "https://localhost:4200/assets/silent-callback.html" },
+                PostLogoutRedirectUris = { "https://localhost:4200/signout-callback" },
+                AllowedCorsOrigins =     { "https://localhost:4200" },
 
                 AllowedScopes =
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
                     IdentityServerConstants.StandardScopes.Profile,
-                    "tavern-api"
+                    "tavern-api.read",
+                    "tavern-api.write"
                 },
+
                 AccessTokenLifetime = 900
             }
         };

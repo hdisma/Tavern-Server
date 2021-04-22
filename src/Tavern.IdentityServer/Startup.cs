@@ -55,6 +55,7 @@ namespace Tavern.IdentityServer
                 //options.UserInteraction.LoginUrl = "";
             })
             .AddInMemoryIdentityResources(Config.IdentityResources)
+            .AddInMemoryApiResources(Config.ApiResources)
             .AddInMemoryApiScopes(Config.ApiScopes)
             .AddInMemoryClients(Config.Clients)
             .AddAspNetIdentity<ApplicationUser>()
@@ -81,6 +82,7 @@ namespace Tavern.IdentityServer
                 config.AllowAnyMethod();
                 config.AllowAnyHeader();
             });
+
             app.UseIdentityServer();
 
             // uncomment, if you want to add MVC
